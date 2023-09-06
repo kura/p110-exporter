@@ -34,7 +34,7 @@ for device in cfg["devices"]:
         res = dev.getEnergyUsage()
 
         # name=rack,
-        # room=office,ip=10.0.80.2
+        # room=office,ip=10.0.80.3
         tags = ",".join([
             f"{k}={v}" for k, v in device.items()
         ])
