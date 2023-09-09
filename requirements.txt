@@ -1,2 +1,4 @@
 PyYAML
 PyP100
+requests
+bs4
