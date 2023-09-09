@@ -22,6 +22,7 @@ devices:
     ip: 10.0.80.5
 """
 
+monthly_energy = []
 
 cfg = safe_load(CFG)
 for device in cfg["devices"]:
@@ -34,13 +35,13 @@ for device in cfg["devices"]:
         res = dev.getEnergyUsage()
 
         # name=rack,
-        # room=office,ip=10.0.80.3
+        # room=office,ip=10.0.80.2
         tags = ",".join([
             f"{k}={v}" for k, v in device.items()
         ])
 
         # today_runtime=711i,    # minutes
-        # tmonth_runtime=1197i,  # minutes
+        # month_runtime=1197i,  # minutes
         # today_energy=1758i,    # watt=hours
         # month_energy=2928i,    # watt-hours
         # current_power=1526i    # watts
@@ -48,7 +49,11 @@ for device in cfg["devices"]:
             f"{k}={v}i" for k, v in res["result"].items()
             if k not in ("local_time", "electricity_charge")
         ])
+        monthly_energy.append(res["result"]["month_energy"])
 
         print(f"""p110_energy_consumption,{tags} {fields}""")
     except:
         continue
+
+print(f"p110_energy_monthly_total total_sum={sum(monthly_energy)}i")
+
