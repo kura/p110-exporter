@@ -22,6 +22,7 @@ devices:
     ip: 10.0.80.5
 """
 
+daily_energy = []
 monthly_energy = []
 
 cfg = safe_load(CFG)
@@ -49,11 +50,13 @@ for device in cfg["devices"]:
             f"{k}={v}i" for k, v in res["result"].items()
             if k not in ("local_time", "electricity_charge")
         ])
+        daily_energy.append(res["result"]["today_energy"])
         monthly_energy.append(res["result"]["month_energy"])
 
         print(f"""p110_energy_consumption,{tags} {fields}""")
     except:
         continue
 
+print(f"p110_energy_daily_total total_sum={sum(daily_energy)}i")
 print(f"p110_energy_monthly_total total_sum={sum(monthly_energy)}i")
 
