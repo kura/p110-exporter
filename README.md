@@ -15,7 +15,7 @@ These scripts are geared for UK users of the [Tapo P110](https://www.tapo.com/uk
     * Create a virtual environemt `python3 -m venv .venv` and then install the requirements in to the venv.
 * Configure the exporter script within the script itself
 * Configure Telegraf to run the exporter script, setting it's data format as influx
-```
+```toml
 [[inputs.exec]]
   commands = ["/path/to/exporter.py"]
   timeout = "10s"
@@ -23,7 +23,7 @@ These scripts are geared for UK users of the [Tapo P110](https://www.tapo.com/uk
   data_format = "influx
 ```
 * Configure Telegraf to run the price_per_kwh script
-```
+```toml
 [[inputs.exec]]
   commands = ["/path/to/price_per_kwh.py"]
   timeout = "30s"
