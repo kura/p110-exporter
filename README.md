@@ -6,6 +6,7 @@ These scripts are geared for UK users of the [Tapo P110](https://www.tapo.com/uk
 * `exporter.py` is the script called by Telegraf. It makes a connection to all of the configured Tapo P110 devices on the network and gets and processes their data.
     * The configuration for this script lives inside the script itself and is in YAML format. See script contents for example config.
 * `price_per_kwh.py` is an optional script, also called by Telegraf. It scapes the Ofgem website for the price per kWh and standing charge values of the default standard variable tariff.
+    * The values from this script are used as variables in the dashboard. If you don't want to use it you'll need to remove the `${price_per_kwh}` and `${standing_charge}` variables from the graphs. Also delete any graph that graphs costs.
 * `dashboard.json` is my dashboard, exported to be used as a template. All queries are written in the [Flux](https://docs.influxdata.com/influxdb/v2/query-data/flux/) query language.
 
 
