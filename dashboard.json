@@ -1384,7 +1384,7 @@
           "measurement": "tapo_p110_power_consumption_w",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "from(bucket: v.defaultBucket)\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"p110_energy_consumption\" and r._field == \"current_power\")\r\n  |> filter(fn: (r) => if \"${exclude_kettle}\" == \"true\" then r.name != \"kettle\" else r._field == \"current_power\")\r\n  |> group(columns: [\"_time\"], mode:\"by\")\r\n  |> sum(column: \"_value\")\r\n  |> group()\r\n  |> fill(value: 0)\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)\r\n  |> keep(columns: [\"_time\", \"_value\"])",
+          "query": "from(bucket: v.defaultBucket)\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"p110_energy_consumption\")\r\n  |> filter(fn: (r) => if \"${exclude_kettle}\" == \"true\" then r._field == \"current_power\" and r.name != \"kettle\" else r._field == \"current_power\")\r\n  |> group(columns: [\"_time\"], mode:\"by\")\r\n  |> sum(column: \"_value\")\r\n  |> group()\r\n  |> fill(value: 0)\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)\r\n  |> keep(columns: [\"_time\", \"_value\"])",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1741,7 +1741,7 @@
           "measurement": "tapo_p110_power_consumption_w",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "from(bucket: v.defaultBucket)\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"p110_energy_consumption\" and r._field == \"current_power\")\r\n  |> filter(fn: (r) => if \"${exclude_kettle}\" == \"true\" then r.name != \"kettle\" else r._field == \"current_power\")\r\n  |> fill(value: 0)\r\n  |> map(fn: (r) => ({r with\r\n    _field: if r.name == \"pc\" then\r\n      \"PC\"\r\n    else if r.name == \"rack\" then\r\n      \"Rack\"\r\n    else if r.name == \"tv\" then\r\n      \"TV\"\r\n    else if r.name == \"kettle\" then\r\n      \"Kettle\"\r\n    else if r.name == \"fridge\" then\r\n      \"Fridge/Freezer\"\r\n    else if r.name == \"microwave\" then\r\n      \"Microwave\"\r\n    else if r.name == \"washing_machine\" then\r\n      \"Washing Machine\"\r\n    else if r.name == \"fan\" then\r\n      \"Fan\"\r\n    else if r.name == \"qi_charger\" then\r\n      \"Qi Charger\"\r\n    else if r.name == \"water_fountain\" then\r\n      \"Cat Water Fountain\"\r\n    else if r.name == \"alexa\" then\r\n      \"Alexa\"\r\n    else\r\n      r.name,\r\n  }))\r\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
+          "query": "from(bucket: v.defaultBucket)\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"p110_energy_consumption\")\r\n  |> filter(fn: (r) => if \"${exclude_kettle}\" == \"true\" then r._field == \"current_power\" and r.name != \"kettle\" else r._field == \"current_power\")\r\n  |> fill(value: 0)\r\n  |> map(fn: (r) => ({r with\r\n    _field: if r.name == \"pc\" then\r\n      \"PC\"\r\n    else if r.name == \"rack\" then\r\n      \"Rack\"\r\n    else if r.name == \"tv\" then\r\n      \"TV\"\r\n    else if r.name == \"kettle\" then\r\n      \"Kettle\"\r\n    else if r.name == \"fridge\" then\r\n      \"Fridge/Freezer\"\r\n    else if r.name == \"microwave\" then\r\n      \"Microwave\"\r\n    else if r.name == \"washing_machine\" then\r\n      \"Washing Machine\"\r\n    else if r.name == \"fan\" then\r\n      \"Fan\"\r\n    else if r.name == \"qi_charger\" then\r\n      \"Qi Charger\"\r\n    else if r.name == \"water_fountain\" then\r\n      \"Cat Water Fountain\"\r\n    else if r.name == \"alexa\" then\r\n      \"Alexa\"\r\n    else\r\n      r.name,\r\n  }))\r\n  |> keep(columns: [\"_time\", \"_field\", \"_value\"])\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean)",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -1873,7 +1873,7 @@
           "measurement": "tapo_p110_power_consumption_w",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "import \"math\"\r\n\r\ntelegraf_send_freq = 10\r\ninterval_seconds = int(v: math.mMax(x: float(v: $__interval_ms) / 1000.0, y: float(v: telegraf_send_freq)))\r\nwindow_period = duration(v: string(v: interval_seconds) + \"s\")\r\n\r\nfrom(bucket: v.defaultBucket)\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"p110_energy_consumption\" and r._field == \"current_power\")\r\n  |> filter(fn: (r) => if \"${exclude_kettle}\" == \"true\" then r.name != \"kettle\" else r._field == \"current_power\")\r\n  |> fill(value: 0)\r\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"room\"])\r\n  |> group(columns: [\"room\"])\r\n  |> aggregateWindow(every: window_period, fn: sum)\r\n  |> map(fn: (r) =>  ({r with\r\n    room: if r.room == \"kitchen\" then\r\n      \"Kitchen\"\r\n    else if r.room == \"office\" then\r\n      \"Office\"\r\n    else if r.room == \"living_room\" then\r\n      \"Living Room\"\r\n    else if r.room == \"bedroom\" then\r\n      \"Bedroom\"\r\n    else if r.room == \"hallway\" then\r\n      \"Hallway\"\r\n    else\r\n      r.room,\r\n    _value: r._value / (interval_seconds / telegraf_send_freq),\r\n  }))",
+          "query": "import \"math\"\r\n\r\ntelegraf_send_freq = 10\r\ninterval_seconds = int(v: math.mMax(x: float(v: $__interval_ms) / 1000.0, y: float(v: telegraf_send_freq)))\r\nwindow_period = duration(v: string(v: interval_seconds) + \"s\")\r\n\r\nfrom(bucket: v.defaultBucket)\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"p110_energy_consumption\")\r\n  |> filter(fn: (r) => if \"${exclude_kettle}\" == \"true\" then r._field == \"current_power\" and r.name != \"kettle\" else r._field == \"current_power\")\r\n  |> fill(value: 0)\r\n  |> keep(columns: [\"_time\", \"_field\", \"_value\", \"room\"])\r\n  |> group(columns: [\"room\"])\r\n  |> aggregateWindow(every: window_period, fn: sum)\r\n  |> map(fn: (r) =>  ({r with\r\n    room: if r.room == \"kitchen\" then\r\n      \"Kitchen\"\r\n    else if r.room == \"office\" then\r\n      \"Office\"\r\n    else if r.room == \"living_room\" then\r\n      \"Living Room\"\r\n    else if r.room == \"bedroom\" then\r\n      \"Bedroom\"\r\n    else if r.room == \"hallway\" then\r\n      \"Hallway\"\r\n    else\r\n      r.room,\r\n    _value: r._value / (interval_seconds / telegraf_send_freq),\r\n  }))",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -2012,7 +2012,7 @@
   "timezone": "",
   "title": "Energy consumption",
   "uid": "f81adb27-55af-485a-b3b6-58ad19519d28",
-  "version": 105,
+  "version": 106,
   "weekStart": ""
 }
 
