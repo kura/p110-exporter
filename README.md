@@ -31,3 +31,7 @@ These scripts are geared for UK users of the [Tapo P110](https://www.tapo.com/uk
   data_format = "influx"
 ```
 * Restart Telegraf
+
+
+## The dashboard
+![](https://github.com/kura/p110-exporter/blob/main/dashboard.png)
