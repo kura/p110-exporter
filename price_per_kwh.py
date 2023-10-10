@@ -21,6 +21,8 @@ try:
     price_cap = soup.find(
         lambda tag: tag.name == "h2" and tag.text == "The Energy Price Cap unit rates & standing charges"
     ).find_next(
+        lambda tag: tag.name == "strong" and tag.text.lower().startswith("direct debit")
+    ).find_next(
         lambda tag: tag.name == "td" and tag.text == "Electricity"
     ).find_next("td").text
 
