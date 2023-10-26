@@ -1,8 +1,19 @@
+import time
+
 from PyP100 import PyP110
 from yaml import safe_load
 
 
 CFG = """
+# This is the mean power usage of my Tapo P110 itself.
+# It is added to the `current_power` value for each device
+# monitored.
+# It is also used to add the watt-hours value to each device
+# monitored.
+#
+# This value is in milliwatts (mW)
+tapo_wattage: 1130
+
 auth:
   user: user@example.com
   password: some_password
@@ -22,10 +33,12 @@ devices:
     ip: 10.0.80.5
 """
 
+
 daily_energy = []
 monthly_energy = []
 
 cfg = safe_load(CFG)
+TAPO_P110_WATTAGE = float(cfg["tapo_wattage"])
 for device in cfg["devices"]:
     try:
         dev = PyP110.P110(
@@ -36,18 +49,36 @@ for device in cfg["devices"]:
         res = dev.getEnergyUsage()
 
         # name=rack,
-        # room=office,ip=10.0.80.2
+        # room=office,
+        # ip=10.0.80.2
         tags = ",".join([
             f"{k}={v}" for k, v in device.items()
         ])
 
-        # today_runtime=711i,    # minutes
+
+        for k, v in res["result"].items():
+            if k == "current_power":
+                res["result"][k] += TAPO_P110_WATTAGE
+            if k == "today_energy":
+                res["result"][k] += (
+                    TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)
+                ) / 1000
+            if k == "month_energy":
+                res["result"][k] += (
+                    TAPO_P110_WATTAGE * (max(0, time.localtime().tm_mday - 1) * 24)
+                ) / 1000
+                res["result"][k] += (
+                    TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)
+                ) / 1000
+
+        # today_runtime=711i,   # minutes
         # month_runtime=1197i,  # minutes
-        # today_energy=1758i,    # watt=hours
-        # month_energy=2928i,    # watt-hours
-        # current_power=1526i    # watts
+        # today_energy=1758,    # watt-hours (Wh)
+        # month_energy=2928,    # watt-hours (Wh)
+        # current_power=1526    # milliwatts (mW)
         fields = ",".join([
-            f"{k}={v}i" for k, v in res["result"].items()
+            f"""{k}={round(v)}i"""
+            for k, v in res["result"].items()
             if k not in ("local_time", "electricity_charge")
         ])
         daily_energy.append(res["result"]["today_energy"])
@@ -57,6 +88,6 @@ for device in cfg["devices"]:
     except:
         continue
 
-print(f"p110_energy_daily_total total_sum={sum(daily_energy)}i")
-print(f"p110_energy_monthly_total total_sum={sum(monthly_energy)}i")
+print(f"p110_energy_daily_total total_sum={round(sum(daily_energy))}i")
+print(f"p110_energy_monthly_total total_sum={round(sum(monthly_energy))}i")
 
