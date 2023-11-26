@@ -33,21 +33,19 @@ devices:
     ip: 10.0.80.5
 """
 
-
 daily_energy = []
 monthly_energy = []
 
 cfg = safe_load(CFG)
 TAPO_P110_WATTAGE = float(cfg["tapo_wattage"])
 for device in cfg["devices"]:
-    try:
-        dev = PyP110.P110(
-            device["ip"], cfg["auth"]["user"], cfg["auth"]["password"]
-        )
-        dev.handshake()
-        dev.login()
-        res = dev.getEnergyUsage()
+    dev = PyP110.P110(
+        device["ip"], cfg["auth"]["user"], cfg["auth"]["password"]
+    )
 
+    res = dev.getEnergyUsage()
+
+    try:
         # name=rack,
         # room=office,
         # ip=10.0.80.2
@@ -55,19 +53,18 @@ for device in cfg["devices"]:
             f"{k}={v}" for k, v in device.items()
         ])
 
-
-        for k, v in res["result"].items():
+        for k, v in res.items():
             if k == "current_power":
-                res["result"][k] += TAPO_P110_WATTAGE
+                res[k] += TAPO_P110_WATTAGE
             if k == "today_energy":
-                res["result"][k] += (
+                res[k] += (
                     TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)
                 ) / 1000
             if k == "month_energy":
-                res["result"][k] += (
+                res[k] += (
                     TAPO_P110_WATTAGE * (max(0, time.localtime().tm_mday - 1) * 24)
                 ) / 1000
-                res["result"][k] += (
+                res[k] += (
                     TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)
                 ) / 1000
 
@@ -78,16 +75,15 @@ for device in cfg["devices"]:
         # current_power=1526    # milliwatts (mW)
         fields = ",".join([
             f"""{k}={round(v)}i"""
-            for k, v in res["result"].items()
+            for k, v in res.items()
             if k not in ("local_time", "electricity_charge")
         ])
-        daily_energy.append(res["result"]["today_energy"])
-        monthly_energy.append(res["result"]["month_energy"])
+        daily_energy.append(res["today_energy"])
+        monthly_energy.append(res["month_energy"])
 
         print(f"""p110_energy_consumption,{tags} {fields}""")
-    except:
+    except Exception as e:
         continue
 
 print(f"p110_energy_daily_total total_sum={round(sum(daily_energy))}i")
 print(f"p110_energy_monthly_total total_sum={round(sum(monthly_energy))}i")
-

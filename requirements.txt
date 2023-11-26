@@ -1,4 +1,4 @@
 PyYAML
-PyP100
 requests
 bs4
+git+https://github.com/almottier/TapoP100.git@main
