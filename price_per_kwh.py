@@ -20,7 +20,8 @@ try:
     table = pandas.read_html(StringIO(r.text))[0]
 
     idx = [
-        i for i, v in enumerate(table[0])
+        i
+        for i, v in enumerate(table[0])
         if isinstance(v, str) and v.lower() == "electricity"
     ][0]
 
@@ -33,7 +34,8 @@ try:
 
     if kwh_res and stand_chrg_res:
         kwh_price, stand_chrg_price = (
-            float(kwh_res.group(1)) / 100, float(stand_chrg_res.group(1)) / 100
+            float(kwh_res.group(1)) / 100,
+            float(stand_chrg_res.group(1)) / 100,
         )
         print(
             f"p110_energy_price price_per_kwh={kwh_price},"
@@ -41,5 +43,4 @@ try:
         )
 
 except Exception as e:
-    print(e)
     pass

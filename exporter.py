@@ -39,9 +39,7 @@ monthly_energy = []
 cfg = safe_load(CFG)
 TAPO_P110_WATTAGE = float(cfg["tapo_wattage"])
 for device in cfg["devices"]:
-    dev = PyP110.P110(
-        device["ip"], cfg["auth"]["user"], cfg["auth"]["password"]
-    )
+    dev = PyP110.P110(device["ip"], cfg["auth"]["user"], cfg["auth"]["password"])
 
     res = dev.getEnergyUsage()
 
@@ -49,9 +47,7 @@ for device in cfg["devices"]:
         # name=rack,
         # room=office,
         # ip=10.0.80.2
-        tags = ",".join([
-            f"{k}={v}" for k, v in device.items()
-        ])
+        tags = ",".join([f"{k}={v}" for k, v in device.items()])
 
         for k, v in res.items():
             if k == "current_power":
@@ -73,11 +69,13 @@ for device in cfg["devices"]:
         # today_energy=1758,    # watt-hours (Wh)
         # month_energy=2928,    # watt-hours (Wh)
         # current_power=1526    # milliwatts (mW)
-        fields = ",".join([
-            f"""{k}={round(v)}i"""
-            for k, v in res.items()
-            if k not in ("local_time", "electricity_charge")
-        ])
+        fields = ",".join(
+            [
+                f"""{k}={round(v)}i"""
+                for k, v in res.items()
+                if k not in ("local_time", "electricity_charge")
+            ]
+        )
         daily_energy.append(res["today_energy"])
         monthly_energy.append(res["month_energy"])
 
