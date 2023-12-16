@@ -1,7 +1,8 @@
 import re
+from io import StringIO
 
+import pandas
 import requests
-from bs4 import BeautifulSoup
 
 
 URL = "https://www.moneysavingexpert.com/utilities/what-are-the-price-cap-unit-rates-/"
@@ -16,22 +17,28 @@ STDC_PAT = r"Standing charge: ([0-9\.]*)p per day"
 
 try:
     r = requests.get(URL, headers=HEADERS)
-    soup = BeautifulSoup(r.text, features="html.parser")
+    table = pandas.read_html(StringIO(r.text))[0]
 
-    price_cap = soup.find(
-        lambda tag: tag.name == "h2" and tag.text == "The Energy Price Cap unit rates & standing charges"
-    ).find_next(
-        lambda tag: tag.name == "strong" and tag.text.lower().startswith("direct debit")
-    ).find_next(
-        lambda tag: tag.name == "td" and tag.text == "Electricity"
-    ).find_next("td").text
+    idx = [
+        i for i, v in enumerate(table[0])
+        if isinstance(v, str) and v.lower() == "electricity"
+    ][0]
+
+    for i in range(1, len(table)):
+        if "current energy price cap" in table[i][0].lower():
+            price_cap = table[i][idx]
 
     kwh_res = re.search(KWH_PAT, price_cap)
     stand_chrg_res = re.search(STDC_PAT, price_cap)
 
     if kwh_res and stand_chrg_res:
-        kwh_price, stand_chrg_price = float(kwh_res.group(1)) / 100, float(stand_chrg_res.group(1)) / 100
-        print(f"p110_energy_price price_per_kwh={kwh_price},standing_charge={stand_chrg_price}")
+        kwh_price, stand_chrg_price = (
+            float(kwh_res.group(1)) / 100, float(stand_chrg_res.group(1)) / 100
+        )
+        print(
+            f"p110_energy_price price_per_kwh={kwh_price},"
+            f"standing_charge={stand_chrg_price}"
+        )
 
 except Exception as e:
     print(e)
