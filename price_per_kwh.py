@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from io import StringIO
 
 import pandas
@@ -15,6 +16,13 @@ HEADERS = {
 KWH_PAT = r"Unit rate: ([0-9\.]*)p per kWh"
 STDC_PAT = r"Standing charge: ([0-9\.]*)p per day"
 
+QUARTERS = {
+  **dict.fromkeys([1, 2, 3], "1 january to 31 march"),
+  **dict.fromkeys([4, 5, 6], "1 april to 30 june"),
+  **dict.fromkeys([7, 8, 9], "1 july to 30 september"),
+  **dict.fromkeys([10, 11, 12], "1 october to 31 december"),
+}
+
 try:
     r = requests.get(URL, headers=HEADERS)
     table = pandas.read_html(StringIO(r.text))[0]
@@ -25,9 +33,14 @@ try:
         if isinstance(v, str) and v.lower() == "electricity"
     ][0]
 
+    current_quarter = QUARTERS[datetime.now().month]
+    price_cap = None
     for i in range(1, len(table)):
-        if "current energy price cap" in table[i][0].lower():
+        heading = table[i][0].lower()
+        if "current energy price cap" in heading and current_quarter in heading:
             price_cap = table[i][idx]
+    if not price_cap:
+        raise Exception("Couldn't find price cap")
 
     kwh_res = re.search(KWH_PAT, price_cap)
     stand_chrg_res = re.search(STDC_PAT, price_cap)
