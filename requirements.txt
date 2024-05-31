@@ -1,5 +1,5 @@
 PyYAML
-requests
 pandas
 git+https://github.com/almottier/TapoP100.git@main
 lxml
+retry
