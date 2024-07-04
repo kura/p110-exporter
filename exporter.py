@@ -83,7 +83,7 @@ async def tapo_310(device):
     data = device.to_dict()
     tags = [f"name={data['nickname']}",]
     fields = [
-        f"temperature={data['current_temp']}",
+        f"temperature={round(data['current_temp'], 2)}",
         f"humidity={data['current_humidity']}",
         f"low_battery={1 if data['at_low_battery'] else 0}i",
         f"signal={data['signal_level']}i",
