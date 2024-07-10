@@ -42,6 +42,20 @@ TAPO_P110_WATTAGE = float(cfg["tapo_wattage"])
 daily_energy = monthly_energy = 0
 
 
+def heat_index(temp, hum):
+    temp, hum = int(temp), int(hum)
+    # heat-index is only fahrenheit compatible
+    fahrenheit = ((temp * (9 / 5)) + 32)
+
+    # coefficients
+    T = pow(fahrenheit, 2)
+    H = pow(hum, 2)
+    C = [-42.379, 2.04901523, 10.14333127, -0.22475541, -6.83783e-03, -5.481717e-02, 1.22874e-03, 8.5282e-04, -1.99e-06]
+    hi = C[0] + (C[1] * fahrenheit) + (C[2] * hum) + (C[3] * fahrenheit * hum) + (C[4] * T) + (C[5] * H) + (C[6] * T * hum) + (C[7] * fahrenheit * H) + (C[8] * T * H)
+    # convert back to C and return
+    return round((hi - 32) * (5 / 9), 2)
+
+
 async def tapo_p110(device):
     global daily_energy, monthly_energy
     api_client = ApiClient(cfg.get("auth").get("user"), cfg.get("auth").get("password"))
@@ -85,6 +99,7 @@ async def tapo_310(device):
     fields = [
         f"temperature={round(data['current_temp'], 2)}",
         f"humidity={data['current_humidity']}",
+        f"heat_index={heat_index(data['current_temp'], data['current_humidity'])}",
         f"low_battery={1 if data['at_low_battery'] else 0}i",
         f"signal={data['signal_level']}i",
         f"online={1 if data['status'] == 'online' else 0}i",
