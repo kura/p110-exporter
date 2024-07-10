@@ -43,37 +43,33 @@ daily_energy = monthly_energy = 0
 
 
 def heat_index(temp, hum):
-    temp, H = int(temp), int(hum)
-    # heat-index is only fahrenheit compatible
-    F = (temp * (9 / 5)) + 32
+    T, H = int(temp), int(hum)
 
     # coefficients
-    FP = pow(F, 2)
-    HP = pow(H, 2)
-    C = [
-        -42.379,
-        2.04901523,
-        10.14333127,
-        -0.22475541,
-        -6.83783e-03,
-        -5.481717e-02,
-        1.22874e-03,
-        8.5282e-04,
-        -1.99e-06,
-    ]
-    hi = (
-        C[0]
-        + (C[1] * F)
-        + (C[2] * H)
-        + (C[3] * F * H)
-        + (C[4] * FP)
-        + (C[5] * HP)
-        + (C[6] * FP * H)
-        + (C[7] * F * HP)
-        + (C[8] * FP * HP)
+    C1 = -8.78469475556
+    C2 = 1.61139411
+    C3 = 2.33854883889
+    C4 = -0.14611605
+    C5 = -0.012308094
+    C6 = -0.0164248277778
+    C7 = 0.002211732
+    C8 = 0.00072546
+    C9 = -0.000003582
+
+    return round(
+        math.fsum([
+            C1,
+            C2 * T,
+            C3 * H,
+            C4 * T * H,
+            C5 * T**2,
+            C6 * H**2,
+            C7 * T**2 * H,
+            C8 * T * H**2,
+            C9 * T**2 * H**2,
+        ]),
+        2,
     )
-    # convert back to celsius
-    return round((hi - 32) * (5 / 9), 2)
 
 
 async def tapo_p110(device):
