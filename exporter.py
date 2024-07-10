@@ -43,16 +43,36 @@ daily_energy = monthly_energy = 0
 
 
 def heat_index(temp, hum):
-    temp, hum = int(temp), int(hum)
+    temp, H = int(temp), int(hum)
     # heat-index is only fahrenheit compatible
-    fahrenheit = ((temp * (9 / 5)) + 32)
+    F = (temp * (9 / 5)) + 32
 
     # coefficients
-    T = pow(fahrenheit, 2)
-    H = pow(hum, 2)
-    C = [-42.379, 2.04901523, 10.14333127, -0.22475541, -6.83783e-03, -5.481717e-02, 1.22874e-03, 8.5282e-04, -1.99e-06]
-    hi = C[0] + (C[1] * fahrenheit) + (C[2] * hum) + (C[3] * fahrenheit * hum) + (C[4] * T) + (C[5] * H) + (C[6] * T * hum) + (C[7] * fahrenheit * H) + (C[8] * T * H)
-    # convert back to C and return
+    FP = pow(F, 2)
+    HP = pow(H, 2)
+    C = [
+        -42.379,
+        2.04901523,
+        10.14333127,
+        -0.22475541,
+        -6.83783e-03,
+        -5.481717e-02,
+        1.22874e-03,
+        8.5282e-04,
+        -1.99e-06,
+    ]
+    hi = (
+        C[0]
+        + (C[1] * F)
+        + (C[2] * H)
+        + (C[3] * F * H)
+        + (C[4] * FP)
+        + (C[5] * HP)
+        + (C[6] * FP * H)
+        + (C[7] * F * HP)
+        + (C[8] * FP * HP)
+    )
+    # convert back to celsius
     return round((hi - 32) * (5 / 9), 2)
 
 
@@ -67,27 +87,19 @@ async def tapo_p110(device):
         if k == "current_power":
             data[k] += TAPO_P110_WATTAGE
         if k == "today_energy":
-            data[k] += (
-                TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)
-            ) / 1000
+            data[k] += (TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)) / 1000
         if k == "month_energy":
             data[k] += (
                 TAPO_P110_WATTAGE * (max(0, time.localtime().tm_mday - 1) * 24)
             ) / 1000
-            data[k] += (
-                TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)
-            ) / 1000
+            data[k] += (TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)) / 1000
 
     daily_energy += data["today_energy"]
     monthly_energy += data["month_energy"]
 
     tags = ",".join([f"{k}={v}" for k, v in device.items()])
     fields = ",".join(
-        [
-            f"""{k}={round(v)}i"""
-            for k, v in data.items()
-            if k not in ("local_time",)
-        ]
+        [f"""{k}={round(v)}i""" for k, v in data.items() if k not in ("local_time",)]
     )
 
     print(f"p110_energy_consumption,{tags} {fields}")
@@ -95,7 +107,9 @@ async def tapo_p110(device):
 
 async def tapo_310(device):
     data = device.to_dict()
-    tags = [f"name={data['nickname']}",]
+    tags = [
+        f"name={data['nickname']}",
+    ]
     fields = [
         f"temperature={round(data['current_temp'], 2)}",
         f"humidity={data['current_humidity']}",
@@ -119,11 +133,15 @@ async def tapo_hub():
 
 
 loop = asyncio.get_event_loop()
-tasks = [
-    loop.create_task(tapo_p110(device)) for device in cfg.get("devices")
-]
+tasks = [loop.create_task(tapo_p110(device)) for device in cfg.get("devices")]
 loop.run_until_complete(asyncio.wait(tasks))
-loop.run_until_complete(asyncio.wait([tapo_hub(),]))
+loop.run_until_complete(
+    asyncio.wait(
+        [
+            tapo_hub(),
+        ]
+    )
+)
 loop.close()
 
 
