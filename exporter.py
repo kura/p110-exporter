@@ -43,8 +43,17 @@ daily_energy = monthly_energy = 0
 
 
 def heat_index(temp, hum):
-    T, H = int(temp), int(hum)
+    T, H = float(temp), int(hum)
 
+    # correction factor
+    if T < 20:
+        return T
+
+    # Costanzo et al. 2006
+    if T < 27 and H < 40:
+        return round(((T - 0.55 * (1 - 0.001 * H) * (T - 14.5)) + T) / 2, 2)
+
+    # Fischer and Schär 2010
     # coefficients
     C1 = -8.78469475556
     C2 = 1.61139411
@@ -68,7 +77,7 @@ def heat_index(temp, hum):
             C8 * T * H**2,
             C9 * T**2 * H**2,
         ]),
-        2,
+        2
     )
 
 
