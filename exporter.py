@@ -45,10 +45,6 @@ daily_energy = monthly_energy = 0
 def heat_index(temp, hum):
     T, H = float(temp), int(hum)
 
-    # correction factor
-    if T < 20:
-        return T
-
     # Costanzo et al. 2006
     if T < 27 and H < 40:
         return round(((T - 0.55 * (1 - 0.001 * H) * (T - 14.5)) + T) / 2, 2)
@@ -66,18 +62,20 @@ def heat_index(temp, hum):
     C9 = -0.000003582
 
     return round(
-        math.fsum([
-            C1,
-            C2 * T,
-            C3 * H,
-            C4 * T * H,
-            C5 * T**2,
-            C6 * H**2,
-            C7 * T**2 * H,
-            C8 * T * H**2,
-            C9 * T**2 * H**2,
-        ]),
-        2
+        math.fsum(
+            [
+                C1,
+                C2 * T,
+                C3 * H,
+                C4 * T * H,
+                C5 * T**2,
+                C6 * H**2,
+                C7 * T**2 * H,
+                C8 * T * H**2,
+                C9 * T**2 * H**2,
+            ]
+        ),
+        2,
     )
 
 
@@ -110,7 +108,7 @@ async def tapo_p110(device):
     print(f"p110_energy_consumption,{tags} {fields}")
 
 
-async def tapo_310(device):
+async def tapo_t310(device):
     data = device.to_dict()
     tags = [
         f"name={data['nickname']}",
@@ -128,13 +126,33 @@ async def tapo_310(device):
     print(f"tapo_310,{tags} {fields}")
 
 
+async def tapo_t300(device):
+    data = device.to_dict()
+    tags = [
+        f"name={data['nickname']}",
+    ]
+    fields = [
+        f"water_leak={data['water_leak_status']}",
+        f"alarm={1 if data['in_alarm'] else 0}i",
+        f"low_battery={1 if data['at_low_battery'] else 0}i",
+        f"signal={data['signal_level']}i",
+        f"online={1 if data['status'] == 'online' else 0}i",
+    ]
+    tags = ",".join(tags)
+    fields = ",".join(fields)
+    print(f"tapo_t300,{tags} {fields}")
+
+
 async def tapo_hub():
     loop = asyncio.get_running_loop()
     api_client = ApiClient(cfg.get("auth").get("user"), cfg.get("auth").get("password"))
     hub = await api_client.h100(cfg.get("hub").get("ip"))
     devices = await hub.get_child_device_list()
     for device in devices:
-        loop.create_task(tapo_310(device))
+        if isinstance(device, T31XResult):
+            loop.create_task(tapo_t310(device))
+        if isinstance(device, T300Result):
+            loop.create_task(tapo_t300(device))
 
 
 loop = asyncio.get_event_loop()
