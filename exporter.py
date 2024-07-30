@@ -1,5 +1,6 @@
 import asyncio
 import time
+from enum import IntEnum
 
 from tapo import ApiClient
 from yaml import safe_load
@@ -40,6 +41,12 @@ hub:
 cfg = safe_load(CFG)
 TAPO_P110_WATTAGE = float(cfg["tapo_wattage"])
 daily_energy = monthly_energy = 0
+
+
+class Leak(IntEnum):
+    normal = 0
+    waterdry = 1
+    waterleak = 2
 
 
 def heat_index(temp, hum):
@@ -132,7 +139,7 @@ async def tapo_t300(device):
         f"name={data['nickname']}",
     ]
     fields = [
-        f"water_leak={data['water_leak_status']}",
+        f"water_leak={getattr(Leak, data['water_leak_status']).value}",
         f"alarm={1 if data['in_alarm'] else 0}i",
         f"low_battery={1 if data['at_low_battery'] else 0}i",
         f"signal={data['signal_level']}i",
