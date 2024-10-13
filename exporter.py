@@ -53,7 +53,7 @@ def heat_index(temp, hum):
     T, H = float(temp), int(hum)
 
     # Costanzo et al. 2006
-    if T < 27 and H < 40:
+    if T < 27 or H < 40:
         return round(((T - 0.55 * (1 - 0.001 * H) * (T - 14.5)) + T) / 2, 2)
 
     # Fischer and Schär 2010
