@@ -162,16 +162,10 @@ async def tapo_hub():
             loop.create_task(tapo_t300(device))
 
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 tasks = [loop.create_task(tapo_p110(device)) for device in cfg.get("devices")]
 loop.run_until_complete(asyncio.wait(tasks))
-loop.run_until_complete(
-    asyncio.wait(
-        [
-            tapo_hub(),
-        ]
-    )
-)
+asyncio.run(tapo_hub())
 loop.close()
 
 
