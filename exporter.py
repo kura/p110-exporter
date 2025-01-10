@@ -3,6 +3,7 @@ import time
 from enum import IntEnum
 
 from tapo import ApiClient
+from tapo.responses import T110Result, T31XResult, T300Result
 from yaml import safe_load
 
 
@@ -150,12 +151,29 @@ async def tapo_t300(device):
     print(f"tapo_t300,{tags} {fields}")
 
 
+async def tapo_t110(device):
+    data = device.to_dict()
+    tags = [f"name={data['nickname']}",]
+
+    fields = [
+        f"open={1 if data['open'] else 0}i",
+        f"low_battery={1 if data['at_low_battery'] else 0}i",
+        f"signal={data['signal_level']}i",
+        f"online={1 if data['status'] == 'online' else 0}i",
+    ]
+    tags = ",".join(tags)
+    fields = ",".join(fields)
+    print(f"tapo_t110,{tags} {fields}")
+
+
 async def tapo_hub():
     loop = asyncio.get_running_loop()
     api_client = ApiClient(cfg.get("auth").get("user"), cfg.get("auth").get("password"))
     hub = await api_client.h100(cfg.get("hub").get("ip"))
     devices = await hub.get_child_device_list()
     for device in devices:
+        if isinstance(device, T110Result):
+            loop.create_task(tapo_t110(device))
         if isinstance(device, T31XResult):
             loop.create_task(tapo_t310(device))
         if isinstance(device, T300Result):
