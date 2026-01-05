@@ -14,8 +14,8 @@ CFG = """
 # It is also used to add the watt-hours value to each device
 # monitored.
 #
-# This value is in milliwatts (mW)
-tapo_wattage: 1130
+# This value is in watts (mW)
+tapo_wattage: 1.130
 
 auth:
   user: user@example.com
@@ -91,19 +91,31 @@ async def tapo_p110(device):
     global daily_energy, monthly_energy
     api_client = ApiClient(cfg.get("auth").get("user"), cfg.get("auth").get("password"))
     dev = await api_client.p110(device.get("ip"))
-    res = await dev.get_energy_usage()
-    data = res.to_dict()
+    di = await dev.get_device_info()
+    eu = await dev.get_energy_usage()
+    cp = await dev.get_current_power()
+    data = {}
+    for k, v in di.to_dict().items():
+        if k in ["device_on", "on_time", "overcurrent_status", "overheat_status", "power_protection_status", "rssi", "s>
+            data[k] = v
+    data = {**data, **eu.to_dict(), **cp.to_dict()}
 
     for k, v in data.items():
         if k == "current_power":
             data[k] += TAPO_P110_WATTAGE
         if k == "today_energy":
-            data[k] += (TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)) / 1000
+            data[k] += (TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1))
         if k == "month_energy":
             data[k] += (
                 TAPO_P110_WATTAGE * (max(0, time.localtime().tm_mday - 1) * 24)
-            ) / 1000
-            data[k] += (TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1)) / 1000
+            )
+            data[k] += (TAPO_P110_WATTAGE * max(0, time.localtime().tm_hour - 1))
+        if k == "device_on":
+            data[k] = int(v)
+        if k in ["overcurrent_status", "power_protection_status"]:
+            data[k] = 0 if v == "normal" else 1
+        if k == "overheat_status":
+            data[k] = 0 if not v else 1
 
     daily_energy += data["today_energy"]
     monthly_energy += data["month_energy"]
